@@ -120,3 +120,12 @@ function insertInTable(table,obj){
             welcome();
         })
 }
+
+function viewDepartments(){
+    connection.query('SELECT * FROM department',(err,res)=>{
+        if(err) throw err;
+        const departments = res.map(department =>department.name);
+        return departments;
+    })
+}
+
