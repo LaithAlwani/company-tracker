@@ -13,7 +13,7 @@ const connection = mysql.createConnection({
 connection.connect(function(err){
     if(err) throw err;
     console.log(`connected as id ${connection.threadId}`);
-    welcome();
+    viewDepartments();
 });
 
 function welcome(){
@@ -124,8 +124,11 @@ function insertInTable(table,obj){
 function viewDepartments(){
     connection.query('SELECT * FROM department',(err,res)=>{
         if(err) throw err;
-        const departments = res.map(department =>department.name);
-        return departments;
+        const departments = res.map(department =>department);
+        console.log(`*** Departments ***\n-------------------`);
+        departments.forEach(dept => console.log(`${dept.id} | ${dept.name}`));
     })
 }
+
+
 
