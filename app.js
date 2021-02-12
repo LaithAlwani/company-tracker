@@ -13,7 +13,7 @@ const connection = mysql.createConnection({
 connection.connect(function(err){
     if(err) throw err;
     console.log(`connected as id ${connection.threadId}`);
-    viewDepartments();
+    welcome();
 });
 
 function welcome(){
@@ -112,6 +112,53 @@ function addRole(){
     
 }
 
+function addEmployee(){
+    connection.query('SELECT * FROM role', (err,res)=>{
+        if (err) throw err;
+        inquirer.prompt(
+            [
+                {
+                    type:'input',
+                    message:`Employees first name?`,
+                    name: 'fName'
+                },
+                {
+                    type:'input',
+                    message:`Employees first name?`,
+                    name: 'lName'
+                },
+                {
+                    type:'list',
+                    message:'please enter a department id',
+                    name:'role',
+                    choices:  ()=>{
+                        const roles = res.map(role => role.title);
+                        return roles;
+                    }
+                },
+                {
+                    type:'list',
+                    message:'assign a manager',
+                    name:'manager',
+                    choices:  ()=>{
+                        const roles = res.map(role => role.title);
+                        return roles;
+                    }
+                }
+            ]).then(response =>{
+                const chosenRole = res.find(role => role.title === response.role);
+                
+                
+                const newEmployee = {
+                    first_name:response.fName,
+                    last_name: response.lName,
+                    role_id: chosenRole.id
+                 }
+                 insertInTable('employee', newEmployee);
+            }); 
+    })
+}
+
 function insertInTable(table,obj){
     connection.query(`INSERT INTO ${table} SET ?`, obj,
         (err,res)=>{
@@ -127,8 +174,10 @@ function viewDepartments(){
         const departments = res.map(department =>department);
         console.log(`*** Departments ***\n-------------------`);
         departments.forEach(dept => console.log(`${dept.id} | ${dept.name}`));
-    })
+    });
 }
+
+
 
 
 
