@@ -180,11 +180,8 @@ function viewDepartments(){
         if(validateData(res,'Departments')){
             return welcome();
         };
-        const departments = res.map(department =>department);
-        console.log(`\n*** Departments ***\n-------------------`);
-        departments.forEach(dept => console.log(`${dept.id} | ${dept.name}`));
-        console.log(`-------------------`);
-        welcome();
+        viewData(res,'departments');
+        
     });
     
 }
@@ -196,25 +193,20 @@ function viewRoles(){
         if(validateData(res,'Roles')){
             return welcome();
         };
-        const roles = res.map(role => role);
-        console.log(`\n*** Roles ***\n-------------------`);
-        roles.forEach(role => console.log(`${role.title} | ${role.salary} | ${role.name}`));
-        console.log(`-------------------`);
+        viewData(res,'roles');
+        
     });
-    welcome();
+    
 }
 
 function viewEmployees(){
     connection.query('SELECT * FROM employee',(err,res)=>{
         if(err) throw err;
         
-        if(validateData(res,'Employees')){
+        if(validateData(res,'employees')){
             return welcome();
         };
-        const employees = res.map(employee =>employee);
-        console.log(`*** Employees ***\n-------------------`);
-        employees.forEach(employee => console.log(`${employee.first_name} ${employee.last_name} | ${employee.role_id}`));
-        welcome();
+        viewData(res,'employees');
     });
     
 }
@@ -230,6 +222,20 @@ function validateData(array, string){
         return true;
     }
     return false;
+}
+
+function viewData(data,str){
+    const newData = data.map(employee =>employee);
+        console.log(`*** ${str.toUpperCase()} ***\n-------------------`);
+        if(str === 'employees'){
+            newData.forEach(employee => console.log(`${employee.first_name} ${employee.last_name} | ${employee.role_id}`));
+        } else if (str === 'roles'){
+            newData.forEach(role => console.log(`${role.title} | ${role.salary} | ${role.name}`));
+        }else{
+            newData.forEach(dept => console.log(`${dept.id} | ${dept.name}`));
+        }
+        console.log(`-------------------`);
+       welcome();
 }
 
 
