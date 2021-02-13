@@ -21,41 +21,44 @@ function welcome(){
         {
             type:'list',
             message:'what would you like to do?',
-            name:'addViewUpdate',
-            choices:['Add','View','Update','Exit']
+            name:'action',
+            choices:['Add Department','Add Role', 'Add Employee',
+            'View Departments','View Roles', 'View Employees',
+            'Update Employee role','Exit']
         }
     ]).then(response =>{
-        if(response.addViewUpdate === 'Add'){
-            addOptions()
-        }else if(response.addViewUpdate === 'View'){
-            viewDepartments();
-        }else if(response.addViewUpdate === 'Update'){
-            updateOptions();
-        }else{
-            connection.end();
+        switch(response.action){
+            case 'Add Department':
+                addDepartment();
+                break;
+            
+            case 'Add Role':
+                addRole();
+                break;
+
+            case 'Add Employee':
+                addEmployee();
+                break;
+            
+            case 'View Departments':
+                viewDepartments();
+                break;
+            case 'View Roles':
+                viewRoles();
+                break;
+            case 'View Employees':
+                viewEmployees();
+                break;
+            
+            case 'Update Employee role':
+                updateRole();
+                break;
+
+            default:
+                connection.end();
+                break;
         }
     });
-}
-
-function addOptions(){
-    inquirer.prompt([
-        {
-            type:'list',
-            message:'What do you like to add?',
-            name:'addAction',
-            choices:['Department','Role','Employee','Cancel']
-        }
-    ]).then(response=>{
-        if(response.addAction ===  'Department'){
-            addDepartment();
-        }else if(response.addAction ===  'Role'){
-            addRole();
-        }else if(response.addAction ===  'Employee'){
-            addEmployee();
-        }else{
-            welcome();
-        };
-    })
 }
 
 function addDepartment(){
@@ -73,6 +76,7 @@ function addDepartment(){
         insertInTable('department', newDepartment);
     });     
 }
+
 function addRole(){
     connection.query('SELECT * FROM department', (err,res)=>{
         if (err) throw err;
@@ -113,7 +117,7 @@ function addRole(){
 }
 
 function addEmployee(){
-    connection.query('SELECT * FROM role', (err,res)=>{
+    connection.query(`SELECT * FROM role`, (err,res)=>{
         if (err) throw err;
         inquirer.prompt(
             [
@@ -135,24 +139,26 @@ function addEmployee(){
                         const roles = res.map(role => role.title);
                         return roles;
                     }
-                },
-                {
-                    type:'list',
-                    message:'assign a manager',
-                    name:'manager',
-                    choices:  ()=>{
-                        const roles = res.map(role => role.title);
-                        return roles;
-                    }
                 }
+                //,
+                // {
+                //     type:'list',
+                //     message:'assign a manager',
+                //     name:'manager',
+                //     choices:  ()=>{
+                //         const workers = res.map(worker => wroker.name);
+                //         return workers;
+                //     }
+                // }
             ]).then(response =>{
                 const chosenRole = res.find(role => role.title === response.role);
-                
+                const chosenEmployee = res.find(employee => employee.name === response.manager)
                 
                 const newEmployee = {
                     first_name:response.fName,
                     last_name: response.lName,
-                    role_id: chosenRole.id
+                    role_id: chosenRole.id,
+                    manager_id:chosenEmployee.id
                  }
                  insertInTable('employee', newEmployee);
             }); 
@@ -160,24 +166,71 @@ function addEmployee(){
 }
 
 function insertInTable(table,obj){
-    connection.query(`INSERT INTO ${table} SET ?`, obj,
-        (err,res)=>{
+    connection.query(`INSERT INTO ${table} SET ?`, obj,(err,res)=>{
             if(err) throw err;
             console.log('Succesfully added');
             welcome();
-        })
-}
-
-function viewDepartments(){
-    connection.query('SELECT * FROM department',(err,res)=>{
-        if(err) throw err;
-        const departments = res.map(department =>department);
-        console.log(`*** Departments ***\n-------------------`);
-        departments.forEach(dept => console.log(`${dept.id} | ${dept.name}`));
     });
 }
 
 
+function viewDepartments(){
+    connection.query('SELECT * FROM department',(err,res)=>{
+        if(err) throw err;
+        if(validateData(res,'Departments')){
+            return welcome();
+        };
+        const departments = res.map(department =>department);
+        console.log(`\n*** Departments ***\n-------------------`);
+        departments.forEach(dept => console.log(`${dept.id} | ${dept.name}`));
+        console.log(`-------------------`);
+        welcome();
+    });
+    
+}
+
+function viewRoles(){
+    connection.query(`SELECT role.title, role.salary, department.name FROM role
+    INNER JOIN department ON department.id = role.department_id;`,(err,res)=>{
+        if(err) throw err;
+        if(validateData(res,'Roles')){
+            return welcome();
+        };
+        const roles = res.map(role => role);
+        console.log(`\n*** Roles ***\n-------------------`);
+        roles.forEach(role => console.log(`${role.title} | ${role.salary} | ${role.name}`));
+        console.log(`-------------------`);
+    });
+    welcome();
+}
+
+function viewEmployees(){
+    connection.query('SELECT * FROM employee',(err,res)=>{
+        if(err) throw err;
+        
+        if(validateData(res,'Employees')){
+            return welcome();
+        };
+        const employees = res.map(employee =>employee);
+        console.log(`*** Employees ***\n-------------------`);
+        employees.forEach(employee => console.log(`${employee.first_name} ${employee.last_name} | ${employee.role_id}`));
+        welcome();
+    });
+    
+}
+
+function updateRole(){
+    console.log('role updated');
+    welcome();
+}
+
+function validateData(array, string){
+    if(array.length === 0){
+        console.log(`-------\n*****No ${string} found*******\n------------`);
+        return true;
+    }
+    return false;
+}
 
 
 
