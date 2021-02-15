@@ -119,49 +119,58 @@ function addRole(){
 function addEmployee(){
     connection.query(`SELECT * FROM role`, (err,res)=>{
         if (err) throw err;
-        inquirer.prompt(
-            [
-                {
-                    type:'input',
-                    message:`Employees first name?`,
-                    name: 'fName'
-                },
-                {
-                    type:'input',
-                    message:`Employees first name?`,
-                    name: 'lName'
-                },
-                {
-                    type:'list',
-                    message:'please enter a department id',
-                    name:'role',
-                    choices:  ()=>{
-                        const roles = res.map(role => role.title);
-                        return roles;
+        connection.query(`SELECT * FROM employee`, (err, emp_res)=>{
+            if(err)throw err;
+            inquirer.prompt(
+                [
+                    {
+                        type:'input',
+                        message:`Employees first name?`,
+                        name: 'fName'
+                    },
+                    {
+                        type:'input',
+                        message:`Employees last name?`,
+                        name: 'lName'
+                    },
+                    {
+                        type:'list',
+                        message:'please choose a role',
+                        name:'role',
+                        choices:  ()=>{
+                            const roles = res.map(role => role.title);
+                            return roles;   
+                        }
+                    },
+                    {
+                        type:'list',
+                        message:'assign a manager',
+                        name:'manager',
+                        when: (answers) => answers.role !== 'Manager',
+                        choices:  ()=>{
+                            const workers = emp_res.map(worker => worker.first_name);
+                            return workers;
+                        }
                     }
-                }
-                //,
-                // {
-                //     type:'list',
-                //     message:'assign a manager',
-                //     name:'manager',
-                //     choices:  ()=>{
-                //         const workers = res.map(worker => wroker.name);
-                //         return workers;
-                //     }
-                // }
-            ]).then(response =>{
-                const chosenRole = res.find(role => role.title === response.role);
-                const chosenEmployee = res.find(employee => employee.name === response.manager)
-                
-                const newEmployee = {
-                    first_name:response.fName,
-                    last_name: response.lName,
-                    role_id: chosenRole.id,
-                    manager_id:chosenEmployee.id
-                 }
-                 insertInTable('employee', newEmployee);
-            }); 
+                ]).then(response =>{
+                    const chosenRole = res.find(role => role.title === response.role);
+                    const chosenEmployee = emp_res.find(employee => employee.first_name === response.manager)
+                    
+                    const newEmployee = {
+                        first_name:response.fName,
+                        last_name: response.lName,
+                        role_id: chosenRole.id,
+                     }
+                     if(response.role === "Manager"){
+                         newEmployee.manager_id = null;
+                     }else{
+                         newEmployee.manager_id = chosenEmployee.id;
+                     }
+                     insertInTable('employee', newEmployee);
+                }); 
+        })
+
+        
     })
 }
 
@@ -228,7 +237,7 @@ function viewData(data,str){
     const newData = data.map(employee =>employee);
         console.log(`*** ${str.toUpperCase()} ***\n-------------------`);
         if(str === 'employees'){
-            newData.forEach(employee => console.log(`${employee.first_name} ${employee.last_name} | ${employee.role_id}`));
+            newData.forEach(employee => console.log(`${employee.first_name} ${employee.last_name} | ${employee.role_id} | ${employee.manager_id}`));
         } else if (str === 'roles'){
             newData.forEach(role => console.log(`${role.title} | ${role.salary} | ${role.name}`));
         }else{
