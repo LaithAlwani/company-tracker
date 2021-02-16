@@ -149,13 +149,13 @@ function addEmployee(){
                         name:'manager',
                         when: (answers) => answers.role !== 'Manager',
                         choices:  ()=>{
-                            const workers = emp_res.map(worker => worker.first_name);
-                            return workers;
+                            const employees = emp_res.map(emp =>`${emp.first_name} ${emp.last_name}`);
+                            return employees;
                         }
                     }
                 ]).then(response =>{
                     const chosenRole = res.find(role => role.title === response.role);
-                    const chosenEmployee = emp_res.find(employee => employee.first_name === response.manager)
+                    const chosenEmployee = emp_res.find(emp => `${emp.first_name} ${emp.last_name}` === response.manager)
                     
                     const newEmployee = {
                         first_name:response.fName,
@@ -235,4 +235,42 @@ function validateData(array, string){
         return true;
     }
     return false;
+}
+
+function updateRole(){
+    connection.query('SELECT * FROM employee',(err,emp_res)=>{
+        if (err) throw err;
+        connection.query('SELECT * FROM role', (err,role_res)=>{
+            if(err) throw err;
+            inquirer.prompt([
+                {
+                    type:'list',
+                    message:'please choose an employee to update',
+                    name:'employee',
+                    choices:()=>{
+                        const employees = emp_res.map(emp => `${emp.first_name} ${emp.last_name}`);
+                        return employees;
+                    }
+                },
+                {
+                    type:'list',
+                    message:'please choose a new role',
+                    name:'role',
+                    choices:()=>{
+                        const roles = role_res.map(role => role.title);
+                        return roles;
+                    }
+                }
+            ]).then(response=>{
+                
+                const chosenEmp = emp_res.find(emp => `${emp.first_name} ${emp.last_name}` === response.employee);
+                const chosenRole = role_res.find(role => role.title === response.role);
+                
+                connection.query(`UPDATE employee SET role_id = ${chosenRole.id} WHERE id = ${chosenEmp.id}`, (err,res)=>{
+                    if(err) throw err;
+                    welcome();
+                })
+            })
+        })
+    })
 }
