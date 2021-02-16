@@ -1,5 +1,6 @@
 const mysql = require('mysql');
 const inquirer = require('inquirer');
+const cTable = require('console.table');
 
 const connection = mysql.createConnection({
     host:'localhost',
@@ -189,7 +190,8 @@ function viewDepartments(){
         if(validateData(res,'Departments')){
             return welcome();
         };
-        viewData(res,'departments');
+        console.table(res);
+        welcome();
         
     });
     
@@ -202,7 +204,8 @@ function viewRoles(){
         if(validateData(res,'Roles')){
             return welcome();
         };
-        viewData(res,'roles');
+        console.table(res);
+        welcome();
         
     });
     
@@ -215,7 +218,8 @@ function viewEmployees(){
         if(validateData(res,'employees')){
             return welcome();
         };
-        viewData(res,'employees');
+        console.table(res);
+        welcome();
     });
     
 }
@@ -232,20 +236,3 @@ function validateData(array, string){
     }
     return false;
 }
-
-function viewData(data,str){
-    const newData = data.map(employee =>employee);
-        console.log(`*** ${str.toUpperCase()} ***\n-------------------`);
-        if(str === 'employees'){
-            newData.forEach(employee => console.log(`${employee.first_name} ${employee.last_name} | ${employee.role_id} | ${employee.manager_id}`));
-        } else if (str === 'roles'){
-            newData.forEach(role => console.log(`${role.title} | ${role.salary} | ${role.name}`));
-        }else{
-            newData.forEach(dept => console.log(`${dept.id} | ${dept.name}`));
-        }
-        console.log(`-------------------`);
-       welcome();
-}
-
-
-
