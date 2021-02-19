@@ -2,6 +2,15 @@ const mysql = require('mysql');
 const inquirer = require('inquirer');
 const cTable = require('console.table');
 
+const allEmployeesQuery = `SELECT e.id, e.first_name AS "First Name", e.last_name AS "Last Name", r.title, d.name AS "Department", r.salary AS "Salary", CONCAT(m.first_name," ",m.last_name) AS "Manager"
+FROM employee e
+LEFT JOIN role r 
+ON r.id = e.role_id 
+LEFT JOIN department d 
+ON d.id = r.department_id
+LEFT JOIN employee m ON m.id = e.manager_id
+ORDER BY e.id`;
+
 const connection = mysql.createConnection({
     host:'localhost',
     port:3306,
@@ -117,10 +126,69 @@ function addRole(){
     
 }
 
+// function addEmployee(){
+//     connection.query(`SELECT * FROM role`, (err,res)=>{
+//         if (err) throw err;
+//         connection.query(`SELECT * FROM employee`, (err, emp_res)=>{
+//             if(err)throw err;
+//             inquirer.prompt(
+//                 [
+//                     {
+//                         type:'input',
+//                         message:`Employees first name?`,
+//                         name: 'fName'
+//                     },
+//                     {
+//                         type:'input',
+//                         message:`Employees last name?`,
+//                         name: 'lName'
+//                     },
+//                     {
+//                         type:'list',
+//                         message:'please choose a role',
+//                         name:'role',
+//                         choices:  ()=>{
+//                             const roles = res.map(role => role.title);
+//                             return roles;   
+//                         }
+//                     },
+//                     {
+//                         type:'list',
+//                         message:'assign a manager',
+//                         name:'manager',
+//                         when: (answers) => answers.role !== 'Manager',
+//                         choices:  ()=>{
+//                             const employees = emp_res.map(emp =>`${emp.first_name} ${emp.last_name}`);
+//                             return employees;
+//                         }
+//                     }
+//                 ]).then(response =>{
+//                     const chosenRole = res.find(role => role.title === response.role);
+//                     const chosenEmployee = emp_res.find(emp => `${emp.first_name} ${emp.last_name}` === response.manager)
+                    
+//                     const newEmployee = {
+//                         first_name:response.fName,
+//                         last_name: response.lName,
+//                         role_id: chosenRole.id,
+//                      }
+//                      if(response.role === "Manager"){
+//                          newEmployee.manager_id = null;
+//                      }else{
+//                          newEmployee.manager_id = chosenEmployee.id;
+//                      }
+//                      insertInTable('employee', newEmployee);
+//                 }); 
+//         }) 
+//     })
+// }
+
 function addEmployee(){
-    connection.query(`SELECT * FROM role`, (err,res)=>{
+    connection.query(`SELECT * FROM department`, (err,res)=>{
         if (err) throw err;
-        connection.query(`SELECT * FROM employee`, (err, emp_res)=>{
+        connection.query(`SELECT e.id, e.first_name, e.last_name, r.title from employee AS e
+        LEFT JOIN role AS r
+        ON e.role_id = r.id
+        WHERE r.title = "Manager"`, (err, emp_res)=>{
             if(err)throw err;
             inquirer.prompt(
                 [
@@ -136,42 +204,57 @@ function addEmployee(){
                     },
                     {
                         type:'list',
-                        message:'please choose a role',
-                        name:'role',
+                        message:'please choose a department to assign the new employee to',
+                        name:'department',
                         choices:  ()=>{
-                            const roles = res.map(role => role.title);
-                            return roles;   
-                        }
-                    },
-                    {
-                        type:'list',
-                        message:'assign a manager',
-                        name:'manager',
-                        when: (answers) => answers.role !== 'Manager',
-                        choices:  ()=>{
-                            const employees = emp_res.map(emp =>`${emp.first_name} ${emp.last_name}`);
-                            return employees;
+                            const departments = res.map(dept => dept.name);
+                            return departments;   
                         }
                     }
-                ]).then(response =>{
-                    const chosenRole = res.find(role => role.title === response.role);
-                    const chosenEmployee = emp_res.find(emp => `${emp.first_name} ${emp.last_name}` === response.manager)
-                    
-                    const newEmployee = {
-                        first_name:response.fName,
-                        last_name: response.lName,
-                        role_id: chosenRole.id,
-                     }
-                     if(response.role === "Manager"){
-                         newEmployee.manager_id = null;
-                     }else{
-                         newEmployee.manager_id = chosenEmployee.id;
-                     }
-                     insertInTable('employee', newEmployee);
-                }); 
-        })
-
-        
+                ]).then(response=>{
+                    const chosenDept = res.find(dept => dept.name === response.department);
+                    connection.query(`SELECT * FROM role WHERE role.department_id = ${chosenDept.id}`, (err,result)=>{
+                       
+                        inquirer.prompt([
+                            {
+                                type:'list',
+                                message:'please choose a role',
+                                name:'role',
+                                choices:  ()=>{
+                                    const roles = result.map(role => role.title);
+                                    return roles;   
+                                }
+                            },
+                            {
+                                type:'list',
+                                message:'assign a manager',
+                                name:'manager',
+                                when: (answers) => answers.role !== 'Manager',
+                                choices:  ()=>{
+                                    const employees = emp_res.map(emp =>`${emp.first_name} ${emp.last_name}`);
+                                    return employees;
+                                }
+                            }
+                        ]).then(answers =>{
+                            const chosenRole = result.find(role => role.title === answers.role);
+                            const chosenEmployee = emp_res.find(emp => `${emp.first_name} ${emp.last_name}` === answers.manager)
+                            console.log(chosenEmployee);
+                            
+                            const newEmployee = {
+                                first_name:response.fName,
+                                last_name: response.lName,
+                                role_id: chosenRole.id,
+                             }
+                             if(answers.role === "Manager"){
+                                 newEmployee.manager_id = null;
+                             }else{
+                                 newEmployee.manager_id = chosenEmployee.id;
+                             }
+                             insertInTable('employee', newEmployee);
+                        }); 
+                    })
+                })  
+        }) 
     })
 }
 
@@ -198,7 +281,7 @@ function viewDepartments(){
 }
 
 function viewRoles(){
-    connection.query(`SELECT role.title, role.salary, department.name FROM role
+    connection.query(`SELECT role.title, role.salary, department.name AS "Department" FROM role
     INNER JOIN department ON department.id = role.department_id;`,(err,res)=>{
         if(err) throw err;
         if(validateData(res,'Roles')){
@@ -212,7 +295,7 @@ function viewRoles(){
 }
 
 function viewEmployees(){
-    connection.query('SELECT * FROM employee',(err,res)=>{
+    connection.query(allEmployeesQuery,(err,res)=>{
         if(err) throw err;
         
         if(validateData(res,'employees')){
@@ -222,11 +305,6 @@ function viewEmployees(){
         welcome();
     });
     
-}
-
-function updateRole(){
-    console.log('role updated');
-    welcome();
 }
 
 function validateData(array, string){
