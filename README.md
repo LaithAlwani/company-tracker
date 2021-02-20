@@ -1,4 +1,4 @@
-# Company Tracker   test        [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
+# Company Tracker         [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
 
 ## Table of Content:
 1.[Description](#Description)
