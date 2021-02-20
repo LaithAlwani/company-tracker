@@ -126,62 +126,6 @@ function addRole(){
     
 }
 
-// function addEmployee(){
-//     connection.query(`SELECT * FROM role`, (err,res)=>{
-//         if (err) throw err;
-//         connection.query(`SELECT * FROM employee`, (err, emp_res)=>{
-//             if(err)throw err;
-//             inquirer.prompt(
-//                 [
-//                     {
-//                         type:'input',
-//                         message:`Employees first name?`,
-//                         name: 'fName'
-//                     },
-//                     {
-//                         type:'input',
-//                         message:`Employees last name?`,
-//                         name: 'lName'
-//                     },
-//                     {
-//                         type:'list',
-//                         message:'please choose a role',
-//                         name:'role',
-//                         choices:  ()=>{
-//                             const roles = res.map(role => role.title);
-//                             return roles;   
-//                         }
-//                     },
-//                     {
-//                         type:'list',
-//                         message:'assign a manager',
-//                         name:'manager',
-//                         when: (answers) => answers.role !== 'Manager',
-//                         choices:  ()=>{
-//                             const employees = emp_res.map(emp =>`${emp.first_name} ${emp.last_name}`);
-//                             return employees;
-//                         }
-//                     }
-//                 ]).then(response =>{
-//                     const chosenRole = res.find(role => role.title === response.role);
-//                     const chosenEmployee = emp_res.find(emp => `${emp.first_name} ${emp.last_name}` === response.manager)
-                    
-//                     const newEmployee = {
-//                         first_name:response.fName,
-//                         last_name: response.lName,
-//                         role_id: chosenRole.id,
-//                      }
-//                      if(response.role === "Manager"){
-//                          newEmployee.manager_id = null;
-//                      }else{
-//                          newEmployee.manager_id = chosenEmployee.id;
-//                      }
-//                      insertInTable('employee', newEmployee);
-//                 }); 
-//         }) 
-//     })
-// }
-
 function addEmployee(){
     connection.query(`SELECT * FROM department`, (err,res)=>{
         if (err) throw err;
@@ -214,7 +158,7 @@ function addEmployee(){
                 ]).then(response=>{
                     const chosenDept = res.find(dept => dept.name === response.department);
                     connection.query(`SELECT * FROM role WHERE role.department_id = ${chosenDept.id}`, (err,result)=>{
-                       
+                       if(err) throw err;
                         inquirer.prompt([
                             {
                                 type:'list',
@@ -238,7 +182,6 @@ function addEmployee(){
                         ]).then(answers =>{
                             const chosenRole = result.find(role => role.title === answers.role);
                             const chosenEmployee = emp_res.find(emp => `${emp.first_name} ${emp.last_name}` === answers.manager)
-                            console.log(chosenEmployee);
                             
                             const newEmployee = {
                                 first_name:response.fName,
@@ -276,8 +219,7 @@ function viewDepartments(){
         console.table(res);
         welcome();
         
-    });
-    
+    });  
 }
 
 function viewRoles(){
@@ -318,7 +260,8 @@ function validateData(array, string){
 function updateRole(){
     connection.query('SELECT * FROM employee',(err,emp_res)=>{
         if (err) throw err;
-        connection.query('SELECT * FROM role', (err,role_res)=>{
+        connection.query('SELECT * FROM department', (err,dept_res)=>{
+            
             if(err) throw err;
             inquirer.prompt([
                 {
@@ -332,23 +275,43 @@ function updateRole(){
                 },
                 {
                     type:'list',
-                    message:'please choose a new role',
-                    name:'role',
+                    message:'please choose a department',
+                    name:'department',
                     choices:()=>{
-                        const roles = role_res.map(role => role.title);
-                        return roles;
+                        const departments = dept_res.map(dept => dept.name);
+                        return departments;
                     }
                 }
             ]).then(response=>{
                 
                 const chosenEmp = emp_res.find(emp => `${emp.first_name} ${emp.last_name}` === response.employee);
-                const chosenRole = role_res.find(role => role.title === response.role);
+                const chosenDept = dept_res.find(dept => dept.name === response.department);
                 
-                connection.query(`UPDATE employee SET role_id = ${chosenRole.id} WHERE id = ${chosenEmp.id}`, (err,res)=>{
+                connection.query(`SELECT * FROM role WHERE department_id = ${chosenDept.id}`,(err, role_res)=>{
                     if(err) throw err;
-                    welcome();
-                })
+                    
+                    inquirer.prompt([
+                        {
+                            type:'list',
+                            message:'please choose a new role',
+                            name:'role',
+                            choices:()=>{
+                                const roles = role_res.map(role => role.title);
+                                return roles;
+                            }
+                        }
+                    ]).then(answer =>{
+                        const chosenRole = role_res.find(role => role.title === answer.role);
+                        connection.query(`UPDATE employee SET role_id = ${chosenRole.id} WHERE id = ${chosenEmp.id}`, (err,res)=>{
+                            if(err) throw err;
+                            welcome();
+                        })
+                    });
+                });
+                
+                
             })
         })
     })
 }
+
