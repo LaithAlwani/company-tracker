@@ -27,6 +27,7 @@ run " run npm i" to install all dependecies which are:
 * run "node index.js" to start the application 
 * a user can add or view a department, role or  an employee 
 * update an employees' role
+![](./public/assets/images/image.png)
 
 ## License:
 This application is covered under the [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT).    
