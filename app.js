@@ -8,8 +8,7 @@ LEFT JOIN role r
 ON r.id = e.role_id 
 LEFT JOIN department d 
 ON d.id = r.department_id
-LEFT JOIN employee m ON m.id = e.manager_id
-ORDER BY e.id`;
+LEFT JOIN employee m ON m.id = e.manager_id`;
 
 const connection = mysql.createConnection({
     host:'localhost',
@@ -23,10 +22,11 @@ const connection = mysql.createConnection({
 connection.connect(function(err){
     if(err) throw err;
     console.log(`connected as id ${connection.threadId}`);
-    welcome();
+    start();
 });
 
-function welcome(){
+//starts the application  
+function start(){
     inquirer.prompt([
         {
             type:'list',
@@ -37,6 +37,7 @@ function welcome(){
             'Update Employee role','Exit']
         }
     ]).then(response =>{
+        //switch statment that determine what the user wants to do.
         switch(response.action){
             case 'Add Department':
                 addDepartment();
@@ -71,6 +72,7 @@ function welcome(){
     });
 }
 
+//add department
 function addDepartment(){
     inquirer.prompt(
     [
@@ -87,6 +89,7 @@ function addDepartment(){
     });     
 }
 
+//add a new role to a department
 function addRole(){
     connection.query('SELECT * FROM department', (err,res)=>{
         if (err) throw err;
@@ -126,6 +129,7 @@ function addRole(){
     
 }
 
+//add a new employee, assigne the emlpyoo to a role.
 function addEmployee(){
     connection.query(`SELECT * FROM department`, (err,res)=>{
         if (err) throw err;
@@ -156,6 +160,7 @@ function addEmployee(){
                         }
                     }
                 ]).then(response=>{
+                    //deterime which department was the employee assianged too.
                     const chosenDept = res.find(dept => dept.name === response.department);
                     connection.query(`SELECT * FROM role WHERE role.department_id = ${chosenDept.id}`, (err,result)=>{
                        if(err) throw err;
@@ -180,6 +185,7 @@ function addEmployee(){
                                 }
                             }
                         ]).then(answers =>{
+                            // determine which role the employee is given
                             const chosenRole = result.find(role => role.title === answers.role);
                             const chosenEmployee = emp_res.find(emp => `${emp.first_name} ${emp.last_name}` === answers.manager)
                             
@@ -201,54 +207,58 @@ function addEmployee(){
     })
 }
 
+//Inserts an object into a specifed table in the database
 function insertInTable(table,obj){
     connection.query(`INSERT INTO ${table} SET ?`, obj,(err,res)=>{
             if(err) throw err;
             console.log('Succesfully added');
-            welcome();
+            start();
     });
 }
 
-
+//view all departemnts
 function viewDepartments(){
     connection.query('SELECT * FROM department',(err,res)=>{
         if(err) throw err;
         if(validateData(res,'Departments')){
-            return welcome();
+            return start();
         };
         console.table(res);
-        welcome();
+        start();
         
     });  
 }
 
+// view all roles
 function viewRoles(){
     connection.query(`SELECT role.title, role.salary, department.name AS "Department" FROM role
     INNER JOIN department ON department.id = role.department_id;`,(err,res)=>{
         if(err) throw err;
         if(validateData(res,'Roles')){
-            return welcome();
+            return start();
         };
         console.table(res);
-        welcome();
+        start();
         
     });
     
 }
 
+//view all employees
 function viewEmployees(){
     connection.query(allEmployeesQuery,(err,res)=>{
         if(err) throw err;
         
         if(validateData(res,'employees')){
-            return welcome();
+            return start();
         };
         console.table(res);
-        welcome();
+        start();
     });
     
 }
 
+//validates if the response from the database has any data
 function validateData(array, string){
     if(array.length === 0){
         console.log(`-------\n*****No ${string} found*******\n------------`);
@@ -257,6 +267,7 @@ function validateData(array, string){
     return false;
 }
 
+//update employee role by chosing an employee an assigning them a new role
 function updateRole(){
     connection.query('SELECT * FROM employee',(err,emp_res)=>{
         if (err) throw err;
@@ -304,14 +315,11 @@ function updateRole(){
                         const chosenRole = role_res.find(role => role.title === answer.role);
                         connection.query(`UPDATE employee SET role_id = ${chosenRole.id} WHERE id = ${chosenEmp.id}`, (err,res)=>{
                             if(err) throw err;
-                            welcome();
+                            start();
                         })
                     });
-                });
-                
-                
+                }); 
             })
         })
     })
 }
-
